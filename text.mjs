@@ -21,10 +21,10 @@ export function textFromItems(items) {
   return result.replace(/[ \t]+\n/g, '\n').trim();
 }
 
-export function formatPages(pages, { keepBreaks = true, pageLabels = false } = {}) {
+export function formatPages(pages, { keepBreaks = true, pageLabels = false, pageLabel = 'Page' } = {}) {
   return pages.map((text, i) => {
     const body = keepBreaks ? text : text.replace(/\s+/gu, ' ').trim();
-    return pageLabels ? `--- Page ${i + 1} ---\n${body}` : body;
+    return pageLabels ? `--- ${pageLabel} ${i + 1} ---\n${body}` : body;
   }).join('\n\n').trim();
 }
 

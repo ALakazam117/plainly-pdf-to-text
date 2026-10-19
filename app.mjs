@@ -1,13 +1,15 @@
 import { textFromItems, formatPages, uniqueTextNames } from './text.mjs';
+import { t, locale, setLanguage, applyTranslations } from './i18n.mjs';
 
 const $ = id => document.getElementById(id);
 const records = [];
 let selectedId = null, busy = false, stopping = false, activeTask = null;
 let passwordContext = null, toastTimer = null, pdfjsPromise = null, zipping = false;
+let toastKey = null, toastParams = {}, batchPosition = 0, batchTotal = 0;
 const MAX_FILE = 100 * 1024 * 1024, MAX_TOTAL = 300 * 1024 * 1024, MAX_FILES = 50;
 const PREVIEW_LIMIT = 500_000;
 const icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
-const options = () => ({ keepBreaks: $('keepBreaks').checked, pageLabels: $('pageLabels').checked });
+const options = () => ({ keepBreaks: $('keepBreaks').checked, pageLabels: $('pageLabels').checked, pageLabel: t('pageLabel') });
 const selected = () => records.find(r => r.id === selectedId);
 const ready = () => records.filter(r => r.status === 'done');
 const pending = () => records.filter(r => r.status === 'queued' || r.status === 'error');
@@ -16,36 +18,37 @@ const escapeHTML = value => String(value).replace(/[&<>"']/g, s => ({'&':'&amp;'
 const outputNames = () => uniqueTextNames(records.map(r => r.file.name));
 const outputName = record => outputNames()[records.indexOf(record)];
 
-function toast(message) {
+function toast(key, params = {}) {
   clearTimeout(toastTimer);
-  $('toast').textContent = message;
+  toastKey = key; toastParams = params;
+  $('toast').textContent = t(key, params);
   $('toast').hidden = false;
   toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5000);
 }
-function fileSize(bytes) { return bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1048576).toFixed(1)} MB`; }
+function fileSize(bytes) { return bytes < 1048576 ? `${Math.max(1, Math.round(bytes / 1024)).toLocaleString(locale())} KB` : `${(bytes / 1048576).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`; }
 function statusLabel(record) {
-  if (record.status === 'processing') return record.pageCount ? `Extracting page ${record.donePages + 1} of ${record.pageCount}…` : 'Opening PDF…';
-  if (record.status === 'done') return `${record.pageCount} ${record.pageCount === 1 ? 'page' : 'pages'} · Text ready${record.emptyPages ? ` · ${record.emptyPages} without text` : ''}`;
-  if (record.status === 'empty') return `${record.pageCount} ${record.pageCount === 1 ? 'page' : 'pages'} · No selectable text`;
-  if (record.status === 'error') return record.error;
-  return `${fileSize(record.file.size)} · Ready to extract`;
+  if (record.status === 'processing') return record.pageCount ? t('extractingPage', { current: record.donePages + 1, total: record.pageCount }) : t('openingPdf');
+  if (record.status === 'done') return `${t('pages', { count: record.pageCount })} · ${t('textReady')}${record.emptyPages ? ` · ${t('pagesWithoutText', { count: record.emptyPages })}` : ''}`;
+  if (record.status === 'empty') return `${t('pages', { count: record.pageCount })} · ${t('noSelectableText')}`;
+  if (record.status === 'error') return t(record.error);
+  return `${fileSize(record.file.size)} · ${t('queued')}`;
 }
 function renderList() {
   $('fileCount').textContent = records.length;
-  $('fileList').innerHTML = records.map(record => `<li class="file-row${record.id === selectedId ? ' selected' : ''}"><button class="file-select" data-select="${record.id}" aria-pressed="${record.id === selectedId}" title="${escapeHTML(record.file.name)}"><span class="pdf-icon">PDF</span><span class="file-details"><span class="file-name">${escapeHTML(record.file.name)}</span><span class="file-meta${record.status === 'error' ? ' error' : record.status === 'done' ? ' success' : ''}">${escapeHTML(statusLabel(record))}</span></span></button><button class="icon-button" data-remove="${record.id}" aria-label="Remove ${escapeHTML(record.file.name)}" ${busy ? 'disabled' : ''}>${icon('close')}</button></li>`).join('');
+  $('fileList').innerHTML = records.map(record => `<li class="file-row${record.id === selectedId ? ' selected' : ''}"><button class="file-select" data-select="${record.id}" aria-pressed="${record.id === selectedId}" title="${escapeHTML(record.file.name)}"><span class="pdf-icon">PDF</span><span class="file-details"><span class="file-name">${escapeHTML(record.file.name)}</span><span class="file-meta${record.status === 'error' ? ' error' : record.status === 'done' ? ' success' : ''}">${escapeHTML(statusLabel(record))}</span></span></button><button class="icon-button" data-remove="${record.id}" aria-label="${escapeHTML(t('removeFile', { name: record.file.name }))}" ${busy ? 'disabled' : ''}>${icon('close')}</button></li>`).join('');
   $('clearButton').disabled = !records.length || busy || zipping;
   $('browseButton').disabled = busy;
   $('sampleButton').disabled = busy;
   $('zipButton').disabled = !ready().length || busy || zipping;
-  $('zipButton').querySelector('span').textContent = zipping ? 'Preparing…' : ready().length > 1 ? `Download all (${ready().length})` : 'Download all';
+  $('zipButton').querySelector('span').textContent = zipping ? t('preparing') : ready().length > 1 ? t('downloadCount', { count: ready().length }) : t('downloadAll');
   $('convertButton').disabled = !busy && !pending().length;
-  $('convertButton').querySelector('span').textContent = busy ? (stopping ? 'Stopping…' : 'Stop extraction') : pending().length && pending().every(r => r.status === 'error') ? 'Retry extraction' : 'Extract text';
+  $('convertButton').querySelector('span').textContent = busy ? t(stopping ? 'stopping' : 'stop') : pending().length && pending().every(r => r.status === 'error') ? t('retry') : t('extract');
   if (busy && stopping) $('convertButton').disabled = true;
   if (!busy) {
     const count = ready().length;
     const errors = records.filter(r => r.status === 'error').length;
-    $('batchStatus').textContent = !records.length ? 'Add a PDF to get started' : count ? `${count} ${count === 1 ? 'text file' : 'text files'} ready to download${errors ? ` · ${errors} failed` : ''}` : pending().length ? `${pending().length} ${pending().length === 1 ? 'PDF' : 'PDFs'} waiting for extraction` : 'No selectable text found in these PDFs';
-  }
+    $('batchStatus').textContent = !records.length ? t('addPdf') : count ? t('readyFiles', { count, errors }) : pending().length ? t('waitingFiles', { count: pending().length }) : t('noTextInBatch');
+  } else $('batchStatus').textContent = batchPosition ? t('batchProgress', { current: batchPosition, total: batchTotal }) : t('readerStarting');
 }
 function renderPreview() {
   const record = selected();
@@ -61,17 +64,17 @@ function renderPreview() {
     const text = outputText(record);
     $('previewText').value = text.slice(0, PREVIEW_LIMIT);
     const words = text.trim().split(/\s+/u).filter(Boolean).length;
-    $('textStats').textContent = `${words.toLocaleString()} words · ${text.length.toLocaleString()} characters`;
+    $('textStats').textContent = t('stats', { words, characters: text.length });
     const notices = [];
-    if (record.emptyPages) notices.push(`${record.emptyPages} of ${record.pageCount} pages have no selectable text. Scanned content needs OCR.`);
-    if (text.length > PREVIEW_LIMIT) notices.push('Preview shortened to 500,000 characters. Copy and downloads include all extracted text.');
+    if (record.emptyPages) notices.push(t('missingPages', { count: record.emptyPages, total: record.pageCount }));
+    if (text.length > PREVIEW_LIMIT) notices.push(t('previewTruncated'));
     if (notices.length) showPreviewMessage(notices.join(' '), false);
   } else {
     $('previewText').value = '';
-    $('textStats').innerHTML = `<span class="green-dot"></span>${record?.status === 'processing' ? 'Working on your words…' : 'Ready when you are'}`;
-    if (record?.status === 'processing') showPreviewMessage('Extracting text on your device. Your preview will appear when this PDF is ready.', true);
-    if (record?.status === 'empty') showPreviewMessage('No selectable text was found. This PDF may contain scanned pages or images. You’ll need an OCR tool to turn those images into text.', true);
-    if (record?.status === 'error') showPreviewMessage(`${record.error} Choose another PDF, or try extracting again.`, true);
+    $('textStats').innerHTML = `<span class="green-dot"></span>${t(record?.status === 'processing' ? 'working' : 'idle')}`;
+    if (record?.status === 'processing') showPreviewMessage(t('processingMessage'), true);
+    if (record?.status === 'empty') showPreviewMessage(t('emptyMessage'), true);
+    if (record?.status === 'error') showPreviewMessage(`${t(record.error)} ${t('retryHint')}`, true);
   }
 }
 function showPreviewMessage(message, only) {
@@ -82,23 +85,23 @@ function showPreviewMessage(message, only) {
 function render() { renderList(); renderPreview(); }
 
 function addFiles(files) {
-  if (busy) { toast('Wait for extraction to finish, or stop it before adding more files.'); return; }
+  if (busy) { toast('waitBeforeAdding'); return; }
   let added = 0, duplicate = 0;
   const errors = [];
   for (const file of files) {
-    if (!/\.pdf$/i.test(file.name)) { errors.push(`${file.name}: please choose a PDF.`); continue; }
-    if (file.size > MAX_FILE) { errors.push(`${file.name}: exceeds 100 MB.`); continue; }
-    if (!file.size) { errors.push(`${file.name}: this file is empty.`); continue; }
+    if (!/\.pdf$/i.test(file.name)) { errors.push({ key: 'invalidExtension', params: { name: file.name } }); continue; }
+    if (file.size > MAX_FILE) { errors.push({ key: 'tooLarge', params: { name: file.name } }); continue; }
+    if (!file.size) { errors.push({ key: 'emptyFile', params: { name: file.name } }); continue; }
     if (records.some(r => r.file.name === file.name && r.file.size === file.size && r.file.lastModified === file.lastModified)) { duplicate++; continue; }
-    if (records.length >= MAX_FILES) { errors.push('A batch can contain up to 50 PDFs.'); break; }
-    if (records.reduce((n, r) => n + r.file.size, 0) + file.size > MAX_TOTAL) { errors.push('This batch exceeds 300 MB. Download and clear some files first.'); break; }
+    if (records.length >= MAX_FILES) { errors.push({ key: 'tooManyFiles' }); break; }
+    if (records.reduce((n, r) => n + r.file.size, 0) + file.size > MAX_TOTAL) { errors.push({ key: 'totalTooLarge' }); break; }
     const record = { id: crypto.randomUUID(), file, status: 'queued', pages: [], pageCount: 0, donePages: 0, emptyPages: 0, error: '' };
     records.push(record); added++;
     if (!selectedId) selectedId = record.id;
   }
   render();
-  if (errors.length) toast(errors.slice(0, 2).join(' '));
-  else if (duplicate) toast(`${added ? `${added} added. ` : ''}${duplicate} duplicate ${duplicate === 1 ? 'file skipped' : 'files skipped'}.`);
+  if (errors.length) toast('fileErrors', { errors });
+  else if (duplicate) toast('duplicates', { added, duplicate });
 }
 
 async function loadPDFLibrary() {
@@ -109,11 +112,14 @@ async function loadPDFLibrary() {
   return pdfjsPromise;
 }
 function errorMessage(error) {
-  if (error?.name === 'InvalidPDFException') return 'This PDF is damaged or isn’t a valid PDF.';
-  if (error?.name === 'PasswordException') return 'This PDF needs a valid password.';
-  if (error?.name === 'UnknownErrorException') return 'This PDF could not be read.';
-  if (error?.name === 'TypeError') return 'The PDF reader could not load. Refresh the app and try again.';
-  return 'Unable to extract text from this PDF.';
+  if (error?.name === 'InvalidPDFException') return 'errorInvalid';
+  if (error?.name === 'PasswordException') return 'errorPassword';
+  if (error?.name === 'UnknownErrorException') return 'errorUnknown';
+  if (error?.name === 'TypeError') return 'errorReader';
+  return 'errorExtract';
+}
+function renderPassword() {
+  if (passwordContext) $('passwordMessage').textContent = t(passwordContext.incorrect ? 'passwordIncorrect' : 'passwordPrompt', { name: passwordContext.record.file.name });
 }
 function closePassword() {
   passwordContext = null;
@@ -123,7 +129,7 @@ function closePassword() {
 function cancelPassword() {
   const context = passwordContext;
   closePassword();
-  if (context) { context.record.error = 'Password entry was cancelled.'; void context.task.destroy().catch(() => {}); }
+  if (context) { context.record.error = 'passwordCancelled'; void context.task.destroy().catch(() => {}); }
 }
 async function extractAll() {
   if (busy) {
@@ -134,15 +140,14 @@ async function extractAll() {
   }
   const batch = [...pending()];
   if (!batch.length) return;
-  busy = true; stopping = false; render();
-  let completed = 0;
+  busy = true; stopping = false; batchPosition = 0; batchTotal = batch.length; render();
   try {
     const pdfjs = await loadPDFLibrary();
     for (const record of batch) {
       if (stopping) break;
       record.status = 'processing'; record.pages = []; record.error = ''; record.donePages = 0; record.pageCount = 0; record.emptyPages = 0;
       selectedId = record.id;
-      $('batchStatus').textContent = `PDF ${++completed} of ${batch.length} · Processing on your device`;
+      batchPosition++;
       render();
       let task;
       try {
@@ -151,8 +156,8 @@ async function extractAll() {
         task = pdfjs.getDocument({ data, isEvalSupported: false, cMapUrl: new URL('./vendor/cmaps/', import.meta.url).href, cMapPacked: true, standardFontDataUrl: new URL('./vendor/standard_fonts/', import.meta.url).href, wasmUrl: new URL('./vendor/wasm/', import.meta.url).href });
         activeTask = task;
         task.onPassword = (updatePassword, reason) => {
-          passwordContext = { updatePassword, task, record };
-          $('passwordMessage').textContent = reason === pdfjs.PasswordResponses.INCORRECT_PASSWORD ? 'That password didn’t work. Please try again.' : `Enter the password for “${record.file.name}” to extract its text.`;
+          passwordContext = { updatePassword, task, record, incorrect: reason === pdfjs.PasswordResponses.INCORRECT_PASSWORD };
+          renderPassword();
           $('passwordInput').value = '';
           if (!$('passwordDialog').open) $('passwordDialog').showModal();
           $('passwordInput').focus();
@@ -183,12 +188,12 @@ async function extractAll() {
       render();
     }
   } catch (error) {
-    toast('The PDF reader couldn’t start. Refresh this page and try again.');
+    toast('readerFailed');
   } finally {
     busy = false;
     render();
-    if (stopping) toast('Extraction stopped. Completed files are ready to download.');
-    else if (ready().length) toast(`${ready().length} ${ready().length === 1 ? 'text file is' : 'text files are'} ready. Your words are yours to use.`);
+    if (stopping) toast('stopped');
+    else if (ready().length) toast('completed', { count: ready().length });
     stopping = false;
   }
 }
@@ -211,25 +216,30 @@ async function downloadZip() {
     const zip = new window.JSZip();
     ready().forEach(record => zip.file(outputName(record), outputText(record) + '\n'));
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-    saveBlob(blob, 'plainly-text-files.zip');
-    toast('Your text files have been packaged into a ZIP.');
-  } catch { toast('Couldn’t create the ZIP. You can still download each text file individually.'); }
+    saveBlob(blob, t('zipFilename'));
+    toast('zipReady');
+  } catch { toast('zipFailed'); }
   finally { zipping = false; renderList(); }
 }
 async function copyText() {
   const record = selected();
   if (record?.status !== 'done') return;
   const text = outputText(record);
-  try { await navigator.clipboard.writeText(text); toast('Text copied to your clipboard.'); }
+  try { await navigator.clipboard.writeText(text); toast('copied'); }
   catch {
     const area = document.createElement('textarea'); area.value = text; area.style.position = 'fixed'; area.style.opacity = '0'; document.body.append(area); area.select();
     let copied = false;
     try { copied = document.execCommand('copy'); } catch {}
     area.remove();
-    toast(copied ? 'Text copied to your clipboard.' : 'Clipboard access was blocked. Select and copy the text from the preview, or download the .txt file.');
+    toast(copied ? 'copied' : 'clipboardBlocked');
   }
 }
 
+$('languageSelect').addEventListener('change', event => {
+  setLanguage(event.target.value);
+  render(); renderPassword();
+  if (toastKey && !$('toast').hidden) $('toast').textContent = t(toastKey, toastParams);
+});
 $('browseButton').addEventListener('click', () => $('fileInput').click());
 $('fileInput').addEventListener('change', event => { addFiles([...event.target.files]); event.target.value = ''; });
 $('clearButton').addEventListener('click', () => { if (busy || zipping) return; records.length = 0; selectedId = null; render(); });
@@ -279,7 +289,8 @@ $('sampleButton').addEventListener('click', async () => {
     const blob = await response.blob();
     addFiles([new File([blob], 'hello-plainly.pdf', { type: 'application/pdf', lastModified: 0 })]);
     await extractAll();
-  } catch { toast('The sample couldn’t load. You can choose a PDF from your device instead.'); }
+  } catch { toast('sampleFailed'); }
   finally { $('sampleButton').disabled = busy; }
 });
+applyTranslations();
 render();

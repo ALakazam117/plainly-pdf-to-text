@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f7f8f2">
-  <meta name="description" content="Turn your PDFs into plain text. Extract, preview, copy, and download text files privately in your browser.">
-  <title>Plainly — PDF to text</title>
+  <meta name="description" content="Zamień pliki PDF na zwykły tekst. Wyodrębniaj, przeglądaj, kopiuj i pobieraj pliki tekstowe prywatnie w swojej przeglądarce.">
+  <title>Plainly — PDF na tekst</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css">
   <script src="./vendor/jszip.min.js" defer></script>
@@ -26,61 +26,61 @@
   </defs></svg>
 
   <header class="site-header shell">
-    <a class="brand" href="./" aria-label="Plainly home"><span class="brand-mark"><svg><use href="#i-document"/></svg></span>plainly<span class="brand-period">.</span></a>
-    <div class="header-right"><span class="local-badge"><span></span> A browser-only workspace</span><button id="helpButton" class="text-button">How it works <svg><use href="#i-info"/></svg></button></div>
+    <a class="brand" href="./" data-i18n-aria="homeLabel" aria-label="Plainly — strona główna"><span class="brand-mark"><svg><use href="#i-document"/></svg></span>plainly<span class="brand-period">.</span></a>
+    <div class="header-right"><label class="language-control"><span class="sr-only" data-i18n="languageLabel">Język interfejsu</span><select id="languageSelect" class="language-select" data-i18n-aria="languageLabel" aria-label="Język interfejsu"><option value="pl" lang="pl" selected>Polski</option><option value="en" lang="en">English</option></select></label><span class="local-badge"><span></span> <span data-i18n="browserOnly">Wszystko w Twojej przeglądarce</span></span><button id="helpButton" class="text-button"><span data-i18n="howItWorks">Jak to działa</span> <svg><use href="#i-info"/></svg></button></div>
   </header>
 
   <main class="shell">
     <section class="hero" aria-labelledby="title">
-      <div><div class="eyebrow"><span class="eyebrow-line"></span> PDF TO TEXT, SIMPLIFIED</div><h1 id="title">PDFs in. <span>Text out.</span></h1><p>Your words, freed from the document.<br class="mobile-break"> Turn PDFs into clean, editable .txt files in a few clicks.</p></div>
-      <div class="hero-note"><span class="note-icon"><svg><use href="#i-lock"/></svg></span><div><strong>Your files stay yours.</strong><span>Processed on your device.<br>Nothing sent to a server.</span></div></div>
+      <div><div class="eyebrow"><span class="eyebrow-line"></span> <span data-i18n="eyebrow">PDF NA TEKST. PO PROSTU.</span></div><h1 id="title"><span data-i18n="headlineFirst">Z PDF.</span> <span class="headline-accent" data-i18n="headlineSecond">Do tekstu.</span></h1><p><span data-i18n="subtitleFirst">Twój tekst, bez ograniczeń dokumentu.</span><br class="mobile-break"> <span data-i18n="subtitleSecond">Zamień PDF-y w edytowalne pliki .txt w kilku kliknięciach.</span></p></div>
+      <div class="hero-note"><span class="note-icon"><svg><use href="#i-lock"/></svg></span><div><strong><span data-i18n="privacyTitle">Twoje pliki zostają u Ciebie.</span></strong><span><span data-i18n="privacyLine1">Przetwarzanie na Twoim urządzeniu.</span><br><span data-i18n="privacyLine2">Nic nie trafia na serwer.</span></span></div></div>
     </section>
 
-    <section class="workspace" aria-label="PDF to text converter">
+    <section class="workspace" data-i18n-aria="converterLabel" aria-label="Konwerter PDF na tekst">
       <div class="source-panel">
-        <div class="panel-heading"><h2><span class="step-dot">1</span> Your PDFs <span id="fileCount" class="count">0</span></h2><button id="clearButton" class="text-button subtle" disabled>Clear all</button></div>
+        <div class="panel-heading"><h2><span class="step-dot">1</span> <span data-i18n="yourPdfs">Twoje PDF-y</span> <span id="fileCount" class="count">0</span></h2><button id="clearButton" class="text-button subtle" disabled><span data-i18n="clearAll">Wyczyść</span></button></div>
         <div class="source-body">
           <div id="dropzone" class="dropzone">
             <span class="upload-icon"><svg><use href="#i-upload"/></svg></span>
-            <h3>Drop your PDFs here</h3><p>or choose them from your device</p>
-            <button id="browseButton" class="button button-dark">Choose PDF files <span>+</span></button>
-            <span class="drop-hint">Multiple files · up to 100 MB each</span>
+            <h3><span data-i18n="dropTitle">Upuść tutaj pliki PDF</span></h3><p><span data-i18n="dropSubtitle">lub wybierz je ze swojego urządzenia</span></p>
+            <button id="browseButton" class="button button-dark"><span data-i18n="chooseFiles">Wybierz pliki PDF</span> <span>+</span></button>
+            <span class="drop-hint"><span data-i18n="fileLimit">Wiele plików · do 100 MB każdy</span></span>
             <input id="fileInput" type="file" accept=".pdf,application/pdf" multiple hidden>
           </div>
-          <div id="sampleRow" class="sample-row">Just looking around? <button id="sampleButton" class="inline-button">Try a sample <svg><use href="#i-arrow"/></svg></button></div>
-          <ul id="fileList" class="file-list" aria-label="Selected PDF files"></ul>
+          <div id="sampleRow" class="sample-row"><span data-i18n="sampleIntro">Chcesz sprawdzić, jak to działa?</span> <button id="sampleButton" class="inline-button"><span data-i18n="trySample">Wypróbuj przykład</span> <svg><use href="#i-arrow"/></svg></button></div>
+          <ul id="fileList" class="file-list" data-i18n-aria="filesLabel" aria-label="Wybrane pliki PDF"></ul>
           <div class="options">
-            <div class="options-label">TEXT OPTIONS</div>
-            <label class="check-option"><input id="keepBreaks" type="checkbox" checked><span>Keep line breaks</span><span class="option-hint" title="Retain line endings detected in each PDF page.">↵</span></label>
-            <label class="check-option"><input id="pageLabels" type="checkbox"><span>Add page numbers</span><span class="option-hint">#</span></label>
+            <div class="options-label"><span data-i18n="textOptions">OPCJE TEKSTU</span></div>
+            <label class="check-option"><input id="keepBreaks" type="checkbox" checked><span><span data-i18n="keepBreaks">Zachowaj podziały wierszy</span></span><span class="option-hint" data-i18n-title="keepBreaksHint" title="Zachowaj końce wierszy wykryte na każdej stronie PDF.">↵</span></label>
+            <label class="check-option"><input id="pageLabels" type="checkbox"><span><span data-i18n="pageNumbers">Dodaj numery stron</span></span><span class="option-hint">#</span></label>
           </div>
         </div>
-        <div class="source-footer"><button id="convertButton" class="button button-primary" disabled><svg><use href="#i-spark"/></svg><span>Extract text</span><svg class="trailing"><use href="#i-arrow"/></svg></button><p id="batchStatus" role="status" aria-live="polite">Add a PDF to get started</p></div>
+        <div class="source-footer"><button id="convertButton" class="button button-primary" disabled><svg><use href="#i-spark"/></svg><span><span data-i18n="extract">Wyodrębnij tekst</span></span><svg class="trailing"><use href="#i-arrow"/></svg></button><p id="batchStatus" role="status" aria-live="polite"><span data-i18n="addPdf">Dodaj PDF, aby rozpocząć</span></p></div>
       </div>
 
       <div class="preview-panel">
-        <div class="panel-heading"><h2><span class="step-dot neutral">2</span> Text preview</h2><span class="format-badge">.TXT</span></div>
-        <div id="previewToolbar" class="preview-toolbar" hidden><div class="preview-name"><span class="green-dot"></span><span id="previewFilename"></span></div><button id="copyButton" class="text-button"><svg><use href="#i-copy"/></svg>Copy text</button></div>
+        <div class="panel-heading"><h2><span class="step-dot neutral">2</span> <span data-i18n="previewTitle">Podgląd tekstu</span></h2><span class="format-badge">.TXT</span></div>
+        <div id="previewToolbar" class="preview-toolbar" hidden><div class="preview-name"><span class="green-dot"></span><span id="previewFilename"></span></div><button id="copyButton" class="text-button"><svg><use href="#i-copy"/></svg><span data-i18n="copyText">Kopiuj tekst</span></button></div>
         <div id="previewEmpty" class="preview-empty">
           <div class="paper-illustration" aria-hidden="true"><span class="paper-tag">Aa</span><div class="paper-lines"><i></i><i></i><i></i><i></i><i></i></div><span class="paper-check"><svg><use href="#i-check"/></svg></span></div>
-          <h3>A fresh start for your text.</h3><p>Add a PDF and extract its text.<br>Your words will appear right here.</p>
-          <span class="empty-caption">Less formatting. More possibilities.</span>
+          <h3><span data-i18n="emptyTitle">Nowe miejsce dla Twojego tekstu.</span></h3><p><span data-i18n="emptyLine1">Dodaj PDF i wyodrębnij tekst.</span><br><span data-i18n="emptyLine2">Wynik pojawi się właśnie tutaj.</span></p>
+          <span class="empty-caption"><span data-i18n="emptyCaption">Mniej formatowania. Więcej możliwości.</span></span>
         </div>
         <div id="previewMessage" class="preview-message" role="status" hidden></div>
-        <textarea id="previewText" class="preview-text" aria-label="Extracted text preview" readonly spellcheck="false" hidden></textarea>
-        <div class="preview-footer"><div id="textStats" class="text-stats"><span class="green-dot"></span> Ready when you are</div><div class="download-actions"><button id="downloadButton" class="button button-outline" disabled><svg><use href="#i-download"/></svg>Download .txt</button><button id="zipButton" class="button button-primary" disabled><svg><use href="#i-download"/></svg><span>Download all</span></button></div></div>
+        <textarea id="previewText" class="preview-text" data-i18n-aria="previewLabel" aria-label="Podgląd wyodrębnionego tekstu" readonly spellcheck="false" hidden></textarea>
+        <div class="preview-footer"><div id="textStats" class="text-stats"><span class="green-dot"></span> <span data-i18n="idle">Wszystko gotowe do pracy</span></div><div class="download-actions"><button id="downloadButton" class="button button-outline" disabled><svg><use href="#i-download"/></svg><span data-i18n="downloadTxt">Pobierz .txt</span></button><button id="zipButton" class="button button-primary" disabled><svg><use href="#i-download"/></svg><span><span data-i18n="downloadAll">Pobierz wszystko</span></span></button></div></div>
       </div>
     </section>
 
-    <div class="under-workspace"><p><svg><use href="#i-lock"/></svg> Private by design. Your documents never leave this browser.</p><span>UTF-8 text · Original filenames</span></div>
-    <section class="tips" aria-label="Good to know"><div class="tip-icon"><svg><use href="#i-info"/></svg></div><p><strong>A small note about PDFs</strong><span>Works with PDFs that contain selectable text. Scanned pages and photos need OCR, which isn’t included. Complex columns may need a little tidying.</span></p><span class="tip-tag">GOOD TO KNOW</span></section>
+    <div class="under-workspace"><p><svg><use href="#i-lock"/></svg> <span data-i18n="privacyFooter">Prywatność od podstaw. Dokumenty pozostają w tej przeglądarce.</span></p><span><span data-i18n="encodingNote">Tekst UTF-8 · Oryginalne nazwy plików</span></span></div>
+    <section class="tips" data-i18n-aria="goodToKnow" aria-label="Warto wiedzieć"><div class="tip-icon"><svg><use href="#i-info"/></svg></div><p><strong><span data-i18n="tipsTitle">Kilka słów o plikach PDF</span></strong><span><span data-i18n="tipsText">Obsługuje PDF-y z tekstem, który można zaznaczyć. Skany i zdjęcia wymagają OCR — ta funkcja nie jest dostępna. Tekst z wielu kolumn może wymagać uporządkowania.</span></span></p><span class="tip-tag"><span data-i18n="tipsTag">WARTO WIEDZIEĆ</span></span></section>
   </main>
 
-  <footer class="site-footer shell"><span>Less friction. More flow.</span><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">Open-source licenses</a></footer>
+  <footer class="site-footer shell"><span><span data-i18n="footerTagline">Mniej przeszkód. Więcej swobody.</span></span><a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener"><span data-i18n="licenses">Licencje open source</span></a></footer>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-  <dialog id="helpDialog"><div class="dialog-header"><h2>From PDF to plain text</h2><button class="icon-button" data-close-dialog="helpDialog" aria-label="Close help"><svg><use href="#i-close"/></svg></button></div><ol class="help-steps"><li><strong>Choose your PDFs</strong><p>Drop in up to 50 files, or use “Choose PDF files”. Each file can be up to 100 MB, with 300 MB total per batch.</p></li><li><strong>Extract and preview</strong><p>Click “Extract text”, then choose a file to see its text. Adjust line breaks or page numbers at any time.</p></li><li><strong>Take your text with you</strong><p>Copy it, download one .txt file, or download all results together in a ZIP. All text files use UTF-8.</p></li></ol><p class="dialog-note">Your files are processed in this browser and aren’t saved by the app. Download your results before closing or refreshing the page. Scanned pages need OCR, which isn’t included.</p><button class="button button-primary full" data-close-dialog="helpDialog">Got it</button></dialog>
-  <dialog id="passwordDialog"><form id="passwordForm"><div class="dialog-header"><h2>This PDF is locked</h2><button id="passwordCancel" type="button" class="icon-button" aria-label="Cancel password entry"><svg><use href="#i-close"/></svg></button></div><p id="passwordMessage"></p><label class="password-label" for="passwordInput">PDF password</label><input id="passwordInput" type="password" autocomplete="off" required><button class="button button-primary full" type="submit">Unlock PDF <svg><use href="#i-lock"/></svg></button><p class="dialog-note">The password stays in this browser and is discarded after use.</p></form></dialog>
-  <noscript><p class="noscript">Please enable JavaScript to extract text from PDFs in your browser.</p></noscript>
+  <dialog id="helpDialog"><div class="dialog-header"><h2><span data-i18n="helpTitle">Od PDF-a do zwykłego tekstu</span></h2><button class="icon-button" data-close-dialog="helpDialog" data-i18n-aria="closeHelp" aria-label="Zamknij pomoc"><svg><use href="#i-close"/></svg></button></div><ol class="help-steps"><li><strong><span data-i18n="helpStep1">Wybierz pliki PDF</span></strong><p><span data-i18n="helpText1">Upuść do 50 plików lub kliknij „Wybierz pliki PDF”. Każdy plik może mieć do 100 MB, a cała partia — do 300 MB.</span></p></li><li><strong><span data-i18n="helpStep2">Wyodrębnij i sprawdź tekst</span></strong><p><span data-i18n="helpText2">Kliknij „Wyodrębnij tekst”, a następnie wybierz plik, aby zobaczyć wynik. W każdej chwili możesz zmienić podziały wierszy lub oznaczenia stron.</span></p></li><li><strong><span data-i18n="helpStep3">Zapisz swój tekst</span></strong><p><span data-i18n="helpText3">Skopiuj tekst, pobierz jeden plik .txt lub wszystkie wyniki razem w archiwum ZIP. Pliki tekstowe są zapisywane w UTF-8.</span></p></li></ol><p class="dialog-note"><span data-i18n="helpNote">Pliki są przetwarzane w tej przeglądarce i nie są zapisywane przez aplikację. Pobierz wyniki przed zamknięciem lub odświeżeniem strony. Skany wymagają OCR — ta funkcja nie jest dostępna.</span></p><button class="button button-primary full" data-close-dialog="helpDialog"><span data-i18n="gotIt">Rozumiem</span></button></dialog>
+  <dialog id="passwordDialog"><form id="passwordForm"><div class="dialog-header"><h2><span data-i18n="passwordTitle">Ten PDF jest zabezpieczony</span></h2><button id="passwordCancel" type="button" class="icon-button" data-i18n-aria="cancelPassword" aria-label="Anuluj wpisywanie hasła"><svg><use href="#i-close"/></svg></button></div><p id="passwordMessage"></p><label class="password-label" for="passwordInput"><span data-i18n="passwordLabel">Hasło do PDF-a</span></label><input id="passwordInput" type="password" autocomplete="off" required><button class="button button-primary full" type="submit"><span data-i18n="unlock">Odblokuj PDF</span> <svg><use href="#i-lock"/></svg></button><p class="dialog-note"><span data-i18n="passwordNote">Hasło pozostaje w tej przeglądarce i jest usuwane po użyciu.</span></p></form></dialog>
+  <noscript><p class="noscript"><span data-i18n="enableJs">Włącz JavaScript, aby wyodrębniać tekst z PDF-ów w swojej przeglądarce.</span></p></noscript>
 </body>
 </html>

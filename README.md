@@ -16,6 +16,7 @@ Dokumentacja: https://docs.github.com/en/pages/getting-started-with-github-pages
 
 ## Działanie
 
+- Polski jest domyślnym językiem interfejsu. Przełącznik u góry strony pozwala wybrać angielski; aplikacja zapamiętuje wybór w tej przeglądarce. Zmiana języka nie tłumaczy treści dokumentów.
 - Wszystkie pliki bibliotek są dołączone. Nie trzeba instalować zależności ani niczego kompilować.
 - PDF-y i hasła do PDF-ów pozostają w przeglądarce. Aplikacja nie przesyła dokumentów na serwer i nie zapisuje ich po odświeżeniu strony.
 - Obsługa wielu PDF-ów, podglądu tekstu, schowka, plików TXT w UTF-8 i zbiorczego ZIP-a.
