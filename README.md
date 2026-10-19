@@ -38,3 +38,5 @@ Następnie otwórz `http://localhost:8765`. Opublikowana strona GitHub Pages nie
 ## Biblioteki
 
 Mozilla PDF.js 5.6.205 (Apache-2.0), JSZip 3.10.1 (używane na licencji MIT). Teksty licencji znajdują się w folderze `vendor/`.
+
+Szczegółowy wykaz składników oraz noty bibliotek zawartych w pakiecie JSZip znajdują się w pliku [THIRD_PARTY_NOTICES.txt](./THIRD_PARTY_NOTICES.txt). Zachowaj je razem z plikami licencji w folderze `vendor/` podczas kopiowania lub rozpowszechniania strony.
